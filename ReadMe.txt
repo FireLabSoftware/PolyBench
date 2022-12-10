@@ -1,0 +1,67 @@
+ PolyBench graphs coverage and variants for a several kb reference
+ -    k-mers matching a reference sequence are used to count coverage
+ -    k-mers with a mismatch at the central base are used to count variants
+ -    k-mers with multiple variants are only counted as representing the central base
+ - DrawCoverageAndVariants is intended to visualize
+ -    Quality of material from a defined RNA/DNA preparation
+ -    Quality of data from a defined sequence pipeline
+ - Optional filters (these can be applied improve fidelity)- 
+ -    Read-level filters: Filters that ignore potentially errant reads
+ -       AmbiguityFilter: Any read pair with an N in either read will be ignored
+ -       DuplicationFilter: Reads that have identical starts for both strands are ignored (deduplication)
+ -       SmarterStrandedFilter: A specific filter that removes reads that artefactually map to the wrong strand in SmarterStranded seq
+ -    Kmer-level filters
+ -       DualStrandRequire: Requires that a mutant k-mer be present in R1 and (in reverse complement) in R2
+ -       MinQScore: Requires a minimum quality score
+ -    Only k-mers observed as complements in both sequence reads (R1 and R2) are counted
+ - Inputs are as follows (command line, Key=Value syntax)
+ -     RefFile= <FastA file with list of sequences to match k-mers from>
+ -     Data= <List of .fastq files or .fasta files>
+ -        Single file, or a list of files that is comma delimited with no spaces
+ -          .fasta or .fastq files can be gzip compressed, albeit slowing the program 
+ -          .fasta and .fasta.gz files must have exactly one sequence per line (no multiline sequences)
+ -        * Wildcards are allowed here, or list of files in a file with the extension .files
+ -        Providing a directory here will search all files in this directory or subdirectory for fasta and fastq data files
+ -
+ - Optional Parameters (will default to reasonable values if not set)
+ -   Input Data Handling
+ -     R1Only= <default false> Setting this to true tells Polybench to only look at R1 data
+ -     Trim5/Trim3= <Default is 0> No real need to trim since the sought variants are always in the middle of a k-mer
+ -         Setting this to a positive integer will trim that number of bases off each end of each read
+ -     AllowSecondaryMutation <default True> Setting this to true instructs Polybench to count variants where there is up to one additional snp in the k-mer relative to reference
+ -         (The central base in the k-mer is the counted position, this just allows counting of the k-mer if there is another error somewhere else [default=True])
+ -     klen = <How long are the k-mers used>.  Default klen = 21.  Recommend an odd number between 21 and 33 depending on complexity of reference  
+ -     Circular = <Set to True to force every Reference sequence to be treated as a circle>
+ -     MaxFileReads = <Default is 0 [no maximum]>  Setting this to a fixed value stops reading after a certain number of read pairs from each file
+ -   Output-
+ -     Output consists of
+ -       A graph with metadata and parameters added (generally an svg file [strongly recommended] but can be set to other modes, e.g. png with Graphmode=)
+ -       A text file (.tdv) with results from the run in a line-by-line table
+ -       A log file with details of the run
+ -       Optionally: a fasta file with reads that have unexpected strandedness properties
+ -     A few output parameters can be set
+ -       DisplaySmoothingWindow= <Default 100>  This sets the smoothing (averaging) window for the graph lines
+ -       DisplayGranularity= <Default 100>  This sets the window for the graph (the distance in base pairs between plotted points)
+ -       OutFileBase = <Default will be files names based on input files>  This can be an optionally user-set character String to Label Output Files with>
+ -       OutDir= <Default is current working directory>  This sets the output directory
+ -       GraphTitle= <Character String to Label graph with, will use a default based on input file names if left onset>
+ -       DisplayVariants= <default True> Setting this to true displays variants that meet the criteria in FractionThreshold and CountThreshold on the graph and reports them in the output text file
+ -         FractionThreshold= <default 0.0025> Fraction of total matches at a given base that need to be variant to display/report that variant
+ -            Note that indels in homopolymers have several possible positions; therefor hp length is used to discount frequency before deciding whether to display these variants
+ -         CountThreshold= <default 4>  Minimum number of variant instances per base required to display/report a variant>
+ -         LookoutVariants= <default none> Will instruct Polybench to look out for a set of additional variants that then will be displayed even if threshold is not met (standard format for input OriginalPositionMutant (e.g. G234A)
+ -       ReadRecapture= <default '' [none]>  Setting this captures reads with k-mers with a specified strandedness into a new fasta file, can be 'a' (capture antisense reads' or 's' (capture sense reads), 'b' capture reads with both sense and antisense k-mers or any combination
+ - Running the program:
+ -   python PolyBench##.py
+ -     RefFile=<MyRefFile>
+ -     Data=MyFastA1.fasta,MyFastA2.fasta.gz,MyFastQ*.fastq
+ -     <Other_Parameters> 
+ - ********
+ - Note about Complex reference sequences
+ -   This package is not designed to handle reference sequences with substantial internal repeats
+ -   Sequences with possible repetitive character, are, however flagged and dealt with in a consistent way
+ -   For any k-mer that is present in the reference as a perfect (unmutated) sequence, the first occurence is treated as the address to assign occurences
+ -         Note that indel variants in homopolymer run are intrinsically ambiguous in their position.  Polybench reports such variants at central consistent position in any homopolymer run
+ -         This reflects a need to make some choice to maintain integral counts; note, however, a consequent increase in indel frequencies at the
+ -           beginning of homopolymer runs due to the fact that these positions "steal" indels from later positions in the homopolymer
+ -
